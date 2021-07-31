@@ -62,6 +62,9 @@ Order of execution:
 	10. Add dithering backround noise that has virtually no influence on the simulation. Breaks up quantization blockyness.
 	11. _update(n) function that updates the frames for discrete time n.
 		This function deals with setting the color limits and titles to display nicely as well.
+		A slight BUG more has to do with things labeled. 
+		Values outside the color limits exist. The limits are there to look at the most contrasting parts of the signals.
+		at the top it should really say and greater/and less than.
 	12. Animation functions. This is my special sauce blend of parameters that work for me.
 		It requries an indivual install for access to libx264. The apt-get ubuntu repos do not work.
 		https://ffmpeg.org/download.html
