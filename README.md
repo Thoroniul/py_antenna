@@ -1,9 +1,8 @@
 # PY_ANTENNA
-
+-----------------
 by Mikhail Kravchenko
 mkravche@vols.utk.edu
 -----------------
-
 A library in c++ and python that deals with RF computation.
 
 This file project the classes that define the EM fields. 
