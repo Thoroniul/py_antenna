@@ -25,6 +25,23 @@ Output3.webm    &nbsp;&nbsp;&nbsp;&nbsp;    The pretty output. I'm honestly doin
 T_junction.py &nbsp;&nbsp;&nbsp;&nbsp; This code extracts the relevant coordinates from the BMP image. The black pixels are the wall and are detected by finding pixels with B=0
 The 'pink' pixels are the source coordinates and are for pixels with G=127. The BMP has BGR pixel orientation.
 
+fullfigure.py &nbsp;&nbsp;&nbsp;&nbsp; Figure wrapper function that contains all the relevent figure, axes, and gui handles.
+
+tm_T_junction.py &nbsp;&nbsp;&nbsp;&nbsp; Main function, does all execution.
+
+Dependencies
+
+Python3.9
+
+numpy
+
+matplotlib
+
+
+
+FFMPEG
+https://ffmpeg.org/download.html
+
 
 
 
