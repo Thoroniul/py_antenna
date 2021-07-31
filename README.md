@@ -37,7 +37,7 @@ numpy
 
 matplotlib
 
-
+PIL
 
 FFMPEG
 https://ffmpeg.org/download.html
