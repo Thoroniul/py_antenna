@@ -5,144 +5,144 @@ Created on Tue Jul 20 17:52:22 2021
 
 @author: mkravche
 
-	This file contains the classes that define the EM fields. 
-	This is me consolidating (or attempting to consoldiate) and documenting various code and notes I have lazily accreted in the last few years.
-	I designed it so that the exciter is linked separatly. 
+    This file contains the classes that define the EM fields. 
+    This is me consolidating (or attempting to consoldiate) and documenting various code and notes I have lazily accreted in the last few years.
+    I designed it so that the exciter is linked separatly. 
 
-	Contains:
+    Contains:
 
-	class sinusoidal_exciter(dt,frequency):       ------>       s.exciter(n) -> (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
-	A signal sinusoidal signal generator that returns a floating point number for a point n.
-	The (1.0 - exp( (-n/k/2)^2 )*Z  is a ramp up the sinusoid where Z is the impedance of the wave in free space. aimp is air impedance -_-.
-	When dealing with multi-material boundary transisions account for the difference in wave impedance to properly observe snell's law.
-
-
-	It is consolidated with the TM_FEM class in the main executing function using the boilerplate:
-	When doing so, it takes the __init__function of TM_FEM which has precidence. This works out nicely so we do not define the constants twice.
-			class Fields(TM_FEM,exciter):
-			    pass
-
-	It is applied the field with the defined helper function as part of the field manager crudly named 	    
-	INPUT:
-	dt -> difference time step (s)
-	frequency -> frequency (hz)
-	n -> An integer corresponding to the frame number. Realistically it will take floats as well, nothing stopping it. 
-
-	OUTPUT:
-	-> SIGNAL (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
+    class sinusoidal_exciter(dt,frequency):       ------>       s.exciter(n) -> (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
+    A signal sinusoidal signal generator that returns a floating point number for a point n.
+    The (1.0 - exp( (-n/k/2)^2 )*Z  is a ramp up the sinusoid where Z is the impedance of the wave in free space. aimp is air impedance -_-.
+    When dealing with multi-material boundary transisions account for the difference in wave impedance to properly observe snell's law.
 
 
-		
-	class TM_FEM(npmls=8,m=100,n=100,  frequency=2.4e9,dx=None,dt=None): 
-		
-	INPUT:
-	npmls is the layers of the perfect absorbing material
-	m,n = stage raster size
-	frequency = frequency of RF
-	dx = cell size, defaults to lambda/2/6.0 (m) (this is an arbitrary gridsize so that dx and dt are constrained to the speed of light) 
-	dt = time cell size (s)
+    It is consolidated with the TM_FEM class in the main executing function using the boilerplate:
+    When doing so, it takes the __init__function of TM_FEM which has precidence. This works out nicely so we do not define the constants twice.
+            class Fields(TM_FEM,exciter):
+                pass
 
-	OUTPUT:
-	Any field. It really is meant to be a data storage class with functions contained to operate on it.
+    It is applied the field with the defined helper function as part of the field manager crudly named         
+    INPUT:
+    dt -> difference time step (s)
+    frequency -> frequency (hz)
+    n -> An integer corresponding to the frame number. Realistically it will take floats as well, nothing stopping it. 
+
+    OUTPUT:
+    -> SIGNAL (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
 
 
-	VECTORS:
-	s.E[:,:,0] --> Ex
-	s.E[:,:,1] --> Ey.T
+        
+    class TM_FEM(npmls=8,m=100,n=100,  frequency=2.4e9,dx=None,dt=None): 
+        
+    INPUT:
+    npmls is the layers of the perfect absorbing material
+    m,n = stage raster size
+    frequency = frequency of RF
+    dx = cell size, defaults to lambda/2/6.0 (m) (this is an arbitrary gridsize so that dx and dt are constrained to the speed of light) 
+    dt = time cell size (s)
 
-	s.cE[:,:,0] --> caex
-	s.cE[:,:,1] --> cbex
-	s.cE[:,:,2] --> caey.T
-	s.cE[:,:,3] --> cbey.T
+    OUTPUT:
+    Any field. It really is meant to be a data storage class with functions contained to operate on it.
 
-	s.hz[:,:,0] --> hz
-	s.hz[:,:,1] --> hzx
-	s.hz[:,:,2] --> hzy
-	s.hz[:,:,3] --> dahzx
-	s.hz[:,:,4] --> dbhzx
-	s.hz[:,:,5] --> dahzy
-	s.hz[:,:,6] --> dbhzy
 
-	ACCESS FUNCTIONS:
-	# function handles for pseudo pass by reference. No reason one can't access the vectors directly in python. 
-	To link to the animator it was much easier to provide a function as a parameter than to give a numpy array.
-	def ex(self):
-		return self.E[:,:,0]
+    VECTORS:
+    s.E[:,:,0] --> Ex
+    s.E[:,:,1] --> Ey.T
 
-	def eyT(self):
-		return self.E[:,:,1].T
+    s.cE[:,:,0] --> caex
+    s.cE[:,:,1] --> cbex
+    s.cE[:,:,2] --> caey.T
+    s.cE[:,:,3] --> cbey.T
 
-	def hzx(self):
-		return self.hz[:,:,1]
+    s.hz[:,:,0] --> hz
+    s.hz[:,:,1] --> hzx
+    s.hz[:,:,2] --> hzy
+    s.hz[:,:,3] --> dahzx
+    s.hz[:,:,4] --> dbhzx
+    s.hz[:,:,5] --> dahzy
+    s.hz[:,:,6] --> dbhzy
 
-	def dhz_dx(self):
-		i,j = self.theater
-		return self.hz[:i,1:j,0] - self.hz[:i,:j-1,0]
+    ACCESS FUNCTIONS:
+    # function handles for pseudo pass by reference. No reason one can't access the vectors directly in python. 
+    To link to the animator it was much easier to provide a function as a parameter than to give a numpy array.
+    def ex(self):
+        return self.E[:,:,0]
 
-	def hzy(self):
-		return self.hz[:,:,2]
+    def eyT(self):
+        return self.E[:,:,1].T
 
-	def boundary_image(self):
-		return self.cE[:,:100,3].T + self.cE[:,:100,1]
-		
-	OPERATION FUNCTIONS:
-	These functions operate on the field vectors.
+    def hzx(self):
+        return self.hz[:,:,1]
 
-	def update_fields(self,n=0,excitation=True):
-	update_fields takes a positive time n and induces the changes in the field.
+    def dhz_dx(self):
+        i,j = self.theater
+        return self.hz[:i,1:j,0] - self.hz[:i,:j-1,0]
 
-	D=epsion*E a change in the electromagnetic field induces a displacement field in the dielectric medium.
-	The magnetic moment of the dielectric induces a change in the magnetic field H (A/m). 
-	This magnetic field induces a current with Ampere's law and influences and induction B (N/A-m).
-	H = B/muo
+    def hzy(self):
+        return self.hz[:,:,2]
 
-	E (V/m) (N/C)
-	D (C/m^2)
-	B (N/Am)
-	H (A/m)
+    def boundary_image(self):
+        return self.cE[:,:100,3].T + self.cE[:,:100,1]
+        
+    OPERATION FUNCTIONS:
+    These functions operate on the field vectors.
 
-	To avoid dealing with complex numbers, I kept Ex and Ey separate in line with my reference textbook.
+    def update_fields(self,n=0,excitation=True):
+    update_fields takes a positive time n and induces the changes in the field.
 
-	The exciter is linked here by the self.draw function. Which "draws" the extracted coordinates from the BMP.
+    D=epsion*E a change in the electromagnetic field induces a displacement field in the dielectric medium.
+    The magnetic moment of the dielectric induces a change in the magnetic field H (A/m). 
+    This magnetic field induces a current with Ampere's law and influences and induction B (N/A-m).
+    H = B/muo
 
-	if excitation: 
-	    s = self.source
-	    self.E[s[1],s[0],1] = self.exciter(n)
+    E (V/m) (N/C)
+    D (C/m^2)
+    B (N/Am)
+    H (A/m)
 
-	self.source must be exstantiated. This is done by the self.draw function.
-	Since the field is transpoed, the coordinate indicies are swapped.
+    To avoid dealing with complex numbers, I kept Ex and Ey separate in line with my reference textbook.
 
-		
-	def s._define_PML_constants():
-	Hidden helper function to exstantiate the Berenger PML constants for a "perfectly transparent" boundary around the edges of the FEM.
+    The exciter is linked here by the self.draw function. Which "draws" the extracted coordinates from the BMP.
 
-	http://www.sam.math.ethz.ch/~hiptmair/Seminars/ABC/slides/Krish.pdf
+    if excitation: 
+        s = self.source
+        self.E[s[1],s[0],1] = self.exciter(n)
 
-	def make_boundaries(self,A,border_vec,orientation='lr',padding='',inline = True):
+    self.source must be exstantiated. This is done by the self.draw function.
+    Since the field is transpoed, the coordinate indicies are swapped.
 
-	INPUT
-	A -> Field Vector operated on
-	border_bec -> material PML vector 
-	orientation='lr' or 'tb' -> boundary to apply along vertical boundaries (top and bottom) or lateral boundaresi( left and right)
-	padding -> adds a gap depending on whether a characther exists in the padding string. t-> top, b-> bottom, l-> left, r-> right.
-	inline-> true controls the output type. If inline it operates on the numpy vector directly
-	OUTPUT
-	A -> Outputs the same A if the inline is False. Otherwised it modifies it directly.
+        
+    def s._define_PML_constants():
+    Hidden helper function to exstantiate the Berenger PML constants for a "perfectly transparent" boundary around the edges of the FEM.
 
-	def draw(T):
-	'draws' the coordinates extracted from the bitmap onto the field equations.
-	It draws a value of -1 for a perfect reflector for the ca field (ca (ex, ey) ) 
-	During the difference equation operating the FEM, this will flip the sign and send the wave in the opposite direction.
-	It draws 0 for (cb (ex, ey) ). Regardless of any change in the field. These will have a charge 0 which set our boundary
-	condition to the standing wave in the cavity between walls.
+    http://www.sam.math.ethz.ch/~hiptmair/Seminars/ABC/slides/Krish.pdf
 
-	These draw idealistic boundaries in a raster. Further improvements can be added by adding lossy materials, anisotropic materials, 
-	and materials of different dielectric and wave propogation constants. For now this is just a filler.
+    def make_boundaries(self,A,border_vec,orientation='lr',padding='',inline = True):
 
-	INPUT 
-	T -> class containing the extracted coordinates of the BMP image.
+    INPUT
+    A -> Field Vector operated on
+    border_bec -> material PML vector 
+    orientation='lr' or 'tb' -> boundary to apply along vertical boundaries (top and bottom) or lateral boundaresi( left and right)
+    padding -> adds a gap depending on whether a characther exists in the padding string. t-> top, b-> bottom, l-> left, r-> right.
+    inline-> true controls the output type. If inline it operates on the numpy vector directly
+    OUTPUT
+    A -> Outputs the same A if the inline is False. Otherwised it modifies it directly.
 
-	
+    def draw(T):
+    'draws' the coordinates extracted from the bitmap onto the field equations.
+    It draws a value of -1 for a perfect reflector for the ca field (ca (ex, ey) ) 
+    During the difference equation operating the FEM, this will flip the sign and send the wave in the opposite direction.
+    It draws 0 for (cb (ex, ey) ). Regardless of any change in the field. These will have a charge 0 which set our boundary
+    condition to the standing wave in the cavity between walls.
+
+    These draw idealistic boundaries in a raster. Further improvements can be added by adding lossy materials, anisotropic materials, 
+    and materials of different dielectric and wave propogation constants. For now this is just a filler.
+
+    INPUT 
+    T -> class containing the extracted coordinates of the BMP image.
+
+    
 
 """
 
@@ -150,26 +150,27 @@ import numpy as np
 
 class sinusoidal_exciter:
     def __init__(self,dt,frequency):
-    """
-    class sinusoidal_exciter(dt,frequency):       ------>       s.exciter(n) -> (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
-	A signal sinusoidal signal generator that returns a floating point number for a point n.
-	The (1.0 - exp( (-n/k/2)^2 )*Z  is a ramp up the sinusoid where Z is the impedance of the wave in free space. aimp is air impedance -_-.
-	When dealing with multi-material boundary transisions account for the difference in wave impedance to properly observe snell's law.
-
-
-	It is consolidated with the TM_FEM class in the main executing function using the boilerplate:
-	When doing so, it takes the __init__function of TM_FEM which has precidence. This works out nicely so we do not define the constants twice.
-			class Fields(TM_FEM,exciter):
-			    pass
-
-	It is applied the field with the defined helper function as part of the field manager crudly named 	    
-	INPUT:
-	dt -> difference time step (s)
-	frequency -> frequency (hz)
-	n -> An integer corresponding to the frame number. Realistically it will take floats as well, nothing stopping it. 
-
-	OUTPUT:
-	-> SIGNAL (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)	"""
+        """
+        class sinusoidal_exciter(dt,frequency):       ------>       s.exciter(n) -> (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
+        A signal sinusoidal signal generator that returns a floating point number for a point n.
+        The (1.0 - exp( (-n/k/2)^2 )*Z  is a ramp up the sinusoid where Z is the impedance of the wave in free space. aimp is air impedance -_-.
+        When dealing with multi-material boundary transisions account for the difference in wave impedance to properly observe snell's law.
+    
+    
+        It is consolidated with the TM_FEM class in the main executing function using the boilerplate:
+        When doing so, it takes the __init__function of TM_FEM which has precidence. This works out nicely so we do not define the constants twice.
+                class Fields(TM_FEM,exciter):
+                    pass
+    
+        It is applied the field with the defined helper function as part of the field manager crudly named         
+        INPUT:
+        dt -> difference time step (s)
+        frequency -> frequency (hz)
+        n -> An integer corresponding to the frame number. Realistically it will take floats as well, nothing stopping it. 
+    
+        OUTPUT:
+        -> SIGNAL (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)    
+        """
         self.pi = np.pi
         self.freq=frequency
         self.epso = 8.854e-12                      # Permittivity of free space
@@ -177,13 +178,13 @@ class sinusoidal_exciter:
         self.aimp = np.sqrt(self.muo/self.epso)    # Wave Impedance in free space | air impedance
         #self.butt = 'butt'
     def exciter(self,n):
-    	"""
-    	s.exciter(n) -> (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
-    	INPUT:
-    	n -> An integer corresponding to the frame number. Realistically it will take floats as well, nothing stopping it. 
-    	OUTPUT:
-    	-> SIGNAL (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
-    	"""
+        """
+        s.exciter(n) -> (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
+        INPUT:
+        n -> An integer corresponding to the frame number. Realistically it will take floats as well, nothing stopping it. 
+        OUTPUT:
+        -> SIGNAL (1.0 - exp( (-n/k)^2 ) * Z * sin(2pi*f*dt*n)
+        """
         return (1.0 - np.exp(-((n/10.0/2)**2)))*self.aimp*np.sin(2.0*self.pi*self.freq*self.dt*n)
     
 
@@ -192,7 +193,7 @@ class TM_FEM:
     def __init__(self, npmls=8,m=100,n=100,  frequency=2.4e9,dx=None,dt=None):
         """
         class TM_FEM(npmls=8,m=100,n=100,  frequency=2.4e9,dx=None,dt=None): 
-        	
+            
         INPUT:
         npmls is the layers of the perfect absorbing material
         m,n = stage raster size
@@ -204,7 +205,7 @@ class TM_FEM:
         Any field. It really is meant to be a data storage class with functions contained to operate on it.
 
 
-	VECTORS:
+    VECTORS:
         s.E[:,:,0] --> Ex
         s.E[:,:,1] --> Ey.T
         
@@ -222,48 +223,48 @@ class TM_FEM:
         s.hz[:,:,6] --> dbhzy
         
         ACCESS FUNCTIONS:
-	# function handles for pseudo pass by reference. No reason one can't access the vectors directly in python. 
-	To link to the animator it was much easier to provide a function as a parameter than to give a numpy array.
-	def ex(self):
-		return self.E[:,:,0]
+    # function handles for pseudo pass by reference. No reason one can't access the vectors directly in python. 
+    To link to the animator it was much easier to provide a function as a parameter than to give a numpy array.
+    def ex(self):
+        return self.E[:,:,0]
 
-	def eyT(self):
-		return self.E[:,:,1].T
+    def eyT(self):
+        return self.E[:,:,1].T
 
-	def hzx(self):
-		return self.hz[:,:,1]
+    def hzx(self):
+        return self.hz[:,:,1]
 
-	def dhz_dx(self):
-		i,j = self.theater
-		return self.hz[:i,1:j,0] - self.hz[:i,:j-1,0]
+    def dhz_dx(self):
+        i,j = self.theater
+        return self.hz[:i,1:j,0] - self.hz[:i,:j-1,0]
 
-	def hzy(self):
-		return self.hz[:,:,2]
+    def hzy(self):
+        return self.hz[:,:,2]
 
-	def boundary_image(self):
-		return self.cE[:,:100,3].T + self.cE[:,:100,1]
-		
-	OPERATION FUNCTIONS:
-	These functions operate on the field vectors.
-	
-	def update_fields(self,n=0,excitation=True):
-	update_fields takes a positive time n and induces the changes in the field.
-	
-	D=epsion*E a change in the electromagnetic field induces a displacement field in the dielectric medium.
-	The magnetic moment of the dielectric induces a change in the magnetic field H (A/m). 
-	This magnetic field induces a current with Ampere's law and influences and induction B (N/A-m).
-	H = B/muo
-	
-	E (V/m) (N/C)
-	D (C/m^2)
-	B (N/Am)
-	H (A/m)
-	
-	To avoid dealing with complex numbers, I kept Ex and Ey separate in line with my reference textbook.
-	
-	The exciter is linked here by the self.draw function. Which "draws" the extracted coordinates from the BMP.
-	
-	if excitation: 
+    def boundary_image(self):
+        return self.cE[:,:100,3].T + self.cE[:,:100,1]
+        
+    OPERATION FUNCTIONS:
+    These functions operate on the field vectors.
+    
+    def update_fields(self,n=0,excitation=True):
+    update_fields takes a positive time n and induces the changes in the field.
+    
+    D=epsion*E a change in the electromagnetic field induces a displacement field in the dielectric medium.
+    The magnetic moment of the dielectric induces a change in the magnetic field H (A/m). 
+    This magnetic field induces a current with Ampere's law and influences and induction B (N/A-m).
+    H = B/muo
+    
+    E (V/m) (N/C)
+    D (C/m^2)
+    B (N/Am)
+    H (A/m)
+    
+    To avoid dealing with complex numbers, I kept Ex and Ey separate in line with my reference textbook.
+    
+    The exciter is linked here by the self.draw function. Which "draws" the extracted coordinates from the BMP.
+    
+    if excitation: 
             s = self.source
             self.E[s[1],s[0],1] = self.exciter(n)
         
@@ -276,29 +277,29 @@ class TM_FEM:
         
         http://www.sam.math.ethz.ch/~hiptmair/Seminars/ABC/slides/Krish.pdf
         
-	def make_boundaries(self,A,border_vec,orientation='lr',padding='',inline = True):
-    	
-    	INPUT
-    	A -> Field Vector operated on
-    	border_bec -> material PML vector 
-    	orientation='lr' or 'tb' -> boundary to apply along vertical boundaries (top and bottom) or lateral boundaresi( left and right)
-    	padding -> adds a gap depending on whether a characther exists in the padding string. t-> top, b-> bottom, l-> left, r-> right.
-    	inline-> true controls the output type. If inline it operates on the numpy vector directly
-    	OUTPUT
-    	A -> Outputs the same A if the inline is False. Otherwised it modifies it directly.
-    	
-    	def draw(T):
-    	'draws' the coordinates extracted from the bitmap onto the field equations.
-    	It draws a value of -1 for a perfect reflector for the ca field (ca (ex, ey) ) 
-    	During the difference equation operating the FEM, this will flip the sign and send the wave in the opposite direction.
-    	It draws 0 for (cb (ex, ey) ). Regardless of any change in the field. These will have a charge 0 which set our boundary
-    	condition to the standing wave in the cavity between walls.
-    	
-    	These draw idealistic boundaries in a raster. Further improvements can be added by adding lossy materials, anisotropic materials, 
-    	and materials of different dielectric and wave propogation constants. For now this is just a filler.
-    	
-    	INPUT 
-    	T -> class containing the extracted coordinates of the BMP image.
+    def make_boundaries(self,A,border_vec,orientation='lr',padding='',inline = True):
+        
+        INPUT
+        A -> Field Vector operated on
+        border_bec -> material PML vector 
+        orientation='lr' or 'tb' -> boundary to apply along vertical boundaries (top and bottom) or lateral boundaresi( left and right)
+        padding -> adds a gap depending on whether a characther exists in the padding string. t-> top, b-> bottom, l-> left, r-> right.
+        inline-> true controls the output type. If inline it operates on the numpy vector directly
+        OUTPUT
+        A -> Outputs the same A if the inline is False. Otherwised it modifies it directly.
+        
+        def draw(T):
+        'draws' the coordinates extracted from the bitmap onto the field equations.
+        It draws a value of -1 for a perfect reflector for the ca field (ca (ex, ey) ) 
+        During the difference equation operating the FEM, this will flip the sign and send the wave in the opposite direction.
+        It draws 0 for (cb (ex, ey) ). Regardless of any change in the field. These will have a charge 0 which set our boundary
+        condition to the standing wave in the cavity between walls.
+        
+        These draw idealistic boundaries in a raster. Further improvements can be added by adding lossy materials, anisotropic materials, 
+        and materials of different dielectric and wave propogation constants. For now this is just a filler.
+        
+        INPUT 
+        T -> class containing the extracted coordinates of the BMP image.
         """
         #self.butt = 'butt'
         self.theater = (m,n)
@@ -325,28 +326,28 @@ class TM_FEM:
         self._init_boundaries()
         
     def update_fields(self,n=0,excitation=True):
-    """
-    	def update_fields(self,n=0,excitation=True):
-	update_fields takes a positive time n and induces the changes in the field.
-	
-	D=epsion*E a change in the electromagnetic field induces a displacement field in the dielectric medium.
-	The magnetic moment of the dielectric induces a change in the magnetic field H (A/m). 
-	This magnetic field induces a current with Ampere's law and influences and induction B (N/A-m).
-	H = B/muo
-	
-	E (V/m) (N/C)
-	D (C/m^2)
-	B (N/Am)
-	H (A/m)
-	
-	The exciter is linked here.
-	if excitation: 
-            s = self.source
-            self.E[s[1],s[0],1] = self.exciter(n)
+        """
+            def update_fields(self,n=0,excitation=True):
+            update_fields takes a positive time n and induces the changes in the field.
         
-        self.source must be exstantiated. This is done by the self.draw function.
-        Since the field is transpoed, the coordinate indicies are swapped.
-    """
+            D=epsion*E a change in the electromagnetic field induces a displacement field in the dielectric medium.
+            The magnetic moment of the dielectric induces a change in the magnetic field H (A/m). 
+            This magnetic field induces a current with Ampere's law and influences and induction B (N/A-m).
+            H = B/muo
+            
+            E (V/m) (N/C)
+            D (C/m^2)
+            B (N/Am)
+            H (A/m)
+    
+            The exciter is linked here.
+            if excitation: 
+                s = self.source
+                self.E[s[1],s[0],1] = self.exciter(n)
+            
+            self.source must be exstantiated. This is done by the self.draw function.
+            Since the field is transpoed, the coordinate indicies are swapped.
+        """
         # Update Ex
         #100x99
         i,j = self.theater
@@ -445,11 +446,11 @@ class TM_FEM:
         self.hz = hz
     
     def _init_boundaries(self):
-    	"""
-    	Calls makeboundaries to set up the boundaries for all the field vectors.
-    	
-    	Note that caey and cbey (cE[:,:,[1,3]]) are transposed.
-    	"""
+        """
+        Calls makeboundaries to set up the boundaries for all the field vectors.
+        
+        Note that caey and cbey (cE[:,:,[1,3]]) are transposed.
+        """
         # caex = make_boundaries(caex, ca,padding='lrt')
         # cbex = make_boundaries(cbex, cb,padding='lrt')
         # caey = make_boundaries(caey, ca, orientation='tb',padding='ltb')
@@ -472,18 +473,18 @@ class TM_FEM:
 
         
     def make_boundaries(self,A,border_vec,orientation='lr',padding='',inline = True):
-    	"""
-    	def make_boundaries(self,A,border_vec,orientation='lr',padding='',inline = True):
-    	
-    	INPUT
-    	A -> Field Vector operated on
-    	border_bec -> material PML vector 
-    	orientation='lr' or 'tb' -> boundary to apply along vertical boundaries (top and bottom) or lateral boundaresi( left and right)
-    	padding -> adds a gap depending on whether a characther exists in the padding string. t-> top, b-> bottom, l-> left, r-> right.
-    	inline-> true controls the output type. If inline it operates on the numpy vector directly
-    	OUTPUT
-    	A -> Outputs the same A if the inline is False. Otherwised it modifies it directly.
-    	"""
+        """
+        def make_boundaries(self,A,border_vec,orientation='lr',padding='',inline = True):
+        
+        INPUT
+        A -> Field Vector operated on
+        border_bec -> material PML vector 
+        orientation='lr' or 'tb' -> boundary to apply along vertical boundaries (top and bottom) or lateral boundaresi( left and right)
+        padding -> adds a gap depending on whether a characther exists in the padding string. t-> top, b-> bottom, l-> left, r-> right.
+        inline-> true controls the output type. If inline it operates on the numpy vector directly
+        OUTPUT
+        A -> Outputs the same A if the inline is False. Otherwised it modifies it directly.
+        """
         m,n = A.shape
         npmls = len(border_vec)
         
@@ -513,20 +514,20 @@ class TM_FEM:
             return A
         
     def draw(self,T):
-    	"""
-    	def draw(T):
-    	'draws' the coordinates extracted from the bitmap onto the field equations.
-    	It draws a value of -1 for a perfect reflector for the ca field (ca (ex, ey) ) 
-    	During the difference equation operating the FEM, this will flip the sign and send the wave in the opposite direction.
-    	It draws 0 for (cb (ex, ey) ). Regardless of any change in the field. These will have a charge 0 which set our boundary
-    	condition to the standing wave in the cavity between walls.
-    	
-    	These draw idealistic boundaries in a raster. Further improvements can be added by adding lossy materials, anisotropic materials, 
-    	and materials of different dielectric and wave propogation constants. For now this is just a filler.
-    	
-    	INPUT 
-    	T -> class containing the extracted coordinates of the BMP image.
-    	"""
+        """
+        def draw(T):
+        'draws' the coordinates extracted from the bitmap onto the field equations.
+        It draws a value of -1 for a perfect reflector for the ca field (ca (ex, ey) ) 
+        During the difference equation operating the FEM, this will flip the sign and send the wave in the opposite direction.
+        It draws 0 for (cb (ex, ey) ). Regardless of any change in the field. These will have a charge 0 which set our boundary
+        condition to the standing wave in the cavity between walls.
+        
+        These draw idealistic boundaries in a raster. Further improvements can be added by adding lossy materials, anisotropic materials, 
+        and materials of different dielectric and wave propogation constants. For now this is just a filler.
+        
+        INPUT 
+        T -> class containing the extracted coordinates of the BMP image.
+        """
         # Establish materials
         coords = tuple(T.coords)
         coords_T = tuple(T.T())
